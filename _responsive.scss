@@ -1,0 +1,160 @@
+@import "compass/css3";
+
+@mixin column($colstart,$colend,$margin:margin,$fixed:fluid, $in-column:in-1-12, $colmargin:no-margin) {
+	width: get-width($colstart,$colend,$margin, $fixed, $in-column, $colmargin);
+	@if ($colend - $colstart +1) != 12 {
+		float:left;
+	}
+	@if $margin == 'no-margin' {
+		margin-left:0;
+		margin-right:0;
+	} @else if $margin == 'no-margin-left' {
+		@if ($colend == 12) {
+			margin-right:1.639344262295%;
+		} @else {
+			margin-right:0.819672131148%;
+		}
+		margin-left:0;
+	} @else if $margin == 'no-margin-right' {
+		@if ($colstart == 1) {
+			margin-left: 1.639344262295%;
+		} @else {
+			margin-left:0.819672131148%;
+		}
+		margin-right:0;
+	} @else {
+		@if ($colstart == 1) {
+			margin-left:1.639344262295%;
+		} @else {
+			margin-left:0.819672131148%;
+		}
+
+		@if ($colend == 12) {
+			margin-right:1.639344262295%;
+		} @else {
+			margin-right:0.819672131148%;
+		}
+		
+	}
+	box-sizing: border-box;
+	
+}
+@function get-width($colstart,$colend,$margin, $fixed:fluid,  $in-column:in-1-12, $colmargin:no-margin){
+	$incol-range: str_slice($in-column,4);
+	$hyphen-index: str_index($incol-range, "-");
+	$incol-start: number(str_slice($incol-range, 0, ($hyphen-index - 1)));
+	$incol-end: number(str_slice($incol-range, ($hyphen-index + 1)));
+	$basewidth: 0;
+	$in-width: 0;
+
+	$colnum: ($colend - $colstart +1);
+	//fixed grid
+	@if ($fixed == 'fixed') {
+
+		//basewidth is the width with margins but no outer margins. Allow for pixel width value for $in-column like "in-918"
+		@if($hyphen-index == 0) {
+			$in-width: number($incol-range);
+		} @else {
+			$in-width: get-width($incol-start, $incol-end, $colmargin);
+			$in-width: ($in-width / ($in-width * 0 + 1)) * 9.76;
+		}
+		$basewidth: (round(($colnum * .08333333) * $in-width )) * 1px;
+		$basemargin: ((8/960) * ($in-width));
+		//remove margins from width if the element has margins
+		@if($margin == 'no-margin-left' or $margin == 'no-margin-right') {
+			$basewidth: $basewidth - $basemargin;
+		} @else if ($margin == 'margin') {
+			$basewidth: $basewidth - (2 * $basemargin);
+		}
+		//remove double margins if it has outer gutters
+		@if ($colstart == 1 and ( $margin == 'no-margin-right' or $margin == 'margin')) {
+			$basewidth: $basewidth - $basemargin;
+		}
+		@if ($colend == 12 and ( $margin == 'no-margin-left' or $margin == 'margin')) {
+			$basewidth: $basewidth - $basemargin;
+		}
+			
+	}
+	//fluid grid
+	@else {
+		@if ($margin == 'no-margin') {
+			@if ($colnum == 12) {
+				$basewidth: 100%;
+			} 
+			@else {
+				$basewidth: (($colnum/12) * (960/976)) * 100%;
+			}
+
+			@if ($colnum < 12 and ($colstart == 1 or $colend == 12)) {
+				$basewidth: $basewidth + (($colnum/12) * 8);
+			}
+		}
+		@else if ($margin == 'no-margin-left') {
+			@if ($colstart == '1') {
+                $basewidth: (($colnum * 80) / 976) * 100%;
+            }
+            @else {
+                $basewidth: ((($colnum * 80) - 8) / 976) * 100%;
+            }
+		}
+        @else if ($margin == 'no-margin-right') {
+			@if ($colend == '12') {
+                $basewidth: (($colnum * 80) / 976) * 100%;
+            }
+            @else {
+                $basewidth: ((($colnum * 80) - 8) / 976) * 100%;
+            }
+		}
+		@else {
+			$basewidth: ((($colnum * 80) - 16) / 976) * 100%;
+		}
+	}
+	@return $basewidth;
+}
+@function max($pixels) {
+  @return 'max-width:'#{$pixels/16.0}'em'
+}
+@function min($pixels) {
+  @return 'min-width:'#{$pixels/16.0}'em'
+}
+
+@function set-margin($colnum,$margin){
+	@if $margin == 'margin' {
+		@return ((($colnum * 80) + 16) / 960) * 100%;
+	}
+	@else {
+		@return ((($colnum * 80) + 8) / 960) * 100%;
+	}
+}
+
+@mixin startat($begin, $margin:margin) {
+	$newmargin: $begin - 1;
+	margin-left: set-margin($newmargin, $margin);
+}
+
+//convert a string to a number
+@function number($string) {
+	// Matrices
+	$strings: '0' '1' '2' '3' '4' '5' '6' '7' '8' '9';
+	$numbers:  0   1   2   3   4   5   6   7   8   9;
+  
+	// Result
+	$result: 0;
+
+	// Looping through all characters
+	@for $i from 1 through str-length($string) {
+		$character: str-slice($string, $i, $i);
+		$index: index($strings, $character);
+    
+		@if not $index {
+			@warn "Unknown character `#{$character}`.";
+			@return false;
+		}
+      
+		$number: nth($numbers, $index);
+		$result: $result * 10 + $number;
+	}
+  
+  @return $result;
+}
+
